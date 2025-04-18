@@ -33,7 +33,7 @@ impl UrlCodec {
     }
     
     pub fn url_encode(&self, s:&str)->Result<String,()>{
-        self.url_utf16be_encode(s)
+        self.url_utf8_encode(s)
     }
 
     pub fn _url_basic_encode(&self, s:&str)->String{
@@ -54,7 +54,26 @@ impl UrlCodec {
         out
     }
     
-    fn url_utf16be_encode(&self, s:&str)->Result<String,()>{
+    fn url_utf8_encode(&self, s:&str)->Result<String,()>{
+        let mut out:String = String::with_capacity(s.len());
+        for ch in s.chars(){
+            if self.valid_char_set.contains(&ch){
+                out.push(ch);
+            }else {
+                let mut hex_list = [0;4];
+                ch.encode_utf8(&mut hex_list);
+                for hex in hex_list{
+                    if hex != 0{
+                        let tmp_str =format!("%{:02X}",hex);
+                            out.push_str(&tmp_str);
+                    }
+                }
+            }
+        }    
+        Ok(out)       
+    } 
+    
+    fn _url_utf16be_encode(&self, s:&str)->Result<String,()>{
         let mut out:String = String::with_capacity(s.len());
         for ch in s.chars(){
             if self.valid_char_set.contains(&ch){
@@ -69,10 +88,27 @@ impl UrlCodec {
                 }
             }
         }    
-            
         Ok(out)       
     } 
-        
+    // 未测试
+    fn _url_utf16le_encode(&self, s:&str)->Result<String,()>{
+        let mut out:String = String::with_capacity(s.len());
+        for ch in s.chars(){
+            if self.valid_char_set.contains(&ch){
+                out.push(ch);
+            }else {
+                let hex_list = (ch as u32).to_be_bytes();
+                for &hex in hex_list.iter().rev(){
+                    if hex != 0{
+                        let tmp_str =format!("%{:02X}",hex);
+                            out.push_str(&tmp_str);
+                    }
+                }
+            }
+        }    
+        Ok(out)       
+    } 
+
     fn url_utf8_decode(&self, s:&str)->Result<String,()>{       
             
             // 将整串以 '%' 为分隔符，划分为多个字串
