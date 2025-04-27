@@ -1,5 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
+pub enum EncodingType {
+    UTF8,
+    UTF16BE,
+    UTF16LE,
+}
+
 pub struct UrlCodec {
     valid_char_set:HashSet<char>,
     _escape_c2d_map:HashMap<&'static str,&'static str>,
@@ -32,8 +38,12 @@ impl UrlCodec {
         self.url_utf8_decode(s)
     }
     
-    pub fn url_encode(&self, s:&str)->Result<String,()>{
-        self.url_utf8_encode(s)
+    pub fn url_encode(&self, s:&str,utf:EncodingType)->Result<String,()>{
+        match utf {
+            EncodingType::UTF8 => self.url_utf8_encode(s),
+            EncodingType::UTF16BE => self.url_utf16be_encode(s),
+            EncodingType::UTF16LE => self.url_utf16le_encode(s),
+        }
     }
 
     pub fn _url_basic_encode(&self, s:&str)->String{
@@ -73,7 +83,7 @@ impl UrlCodec {
         Ok(out)       
     } 
     
-    fn _url_utf16be_encode(&self, s:&str)->Result<String,()>{
+    fn url_utf16be_encode(&self, s:&str)->Result<String,()>{
         let mut out:String = String::with_capacity(s.len());
         for ch in s.chars(){
             if self.valid_char_set.contains(&ch){
@@ -90,8 +100,8 @@ impl UrlCodec {
         }    
         Ok(out)       
     } 
-    // 未测试
-    fn _url_utf16le_encode(&self, s:&str)->Result<String,()>{
+    
+    fn url_utf16le_encode(&self, s:&str)->Result<String,()>{
         let mut out:String = String::with_capacity(s.len());
         for ch in s.chars(){
             if self.valid_char_set.contains(&ch){
